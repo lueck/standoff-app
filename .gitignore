@@ -8,7 +8,11 @@
 *.
 
 dist
+dist-newstyle
+dist-ghcjs
+
 .HTF
+
 .cabal-sandbox
 cabal.sandbox.config
 .stack-work
