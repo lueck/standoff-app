@@ -1,4 +1,4 @@
-(import ./reflex-platform {}).projekt ({ pkgs, ...}: {
+(import ./reflex-platform {}).project ({ pkgs, ...}: {
   packages = {
     StandOff = ./standoff-tools;
     StandOffApp = ./app;
