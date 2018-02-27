@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module StandOffApp.Form
+module StandOffApp.DomUtils
   where
 
 import Reflex.Dom
