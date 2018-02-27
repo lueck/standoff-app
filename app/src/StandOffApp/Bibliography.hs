@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RecursiveDo #-}
 module StandOffApp.Bibliography
   where
 
@@ -29,21 +30,23 @@ bibInputWizard = el "div" $ do
     text "' to be of type '"
     dynText selTyp
     text "'."
-  (fld1, val1) <- bibFieldInput "author"
-  (fld2, val2) <- bibFieldInput "title"
-  (fld3, val3) <- bibFieldInput "year"
-  el "br" blank
-  dynText fld1
-  text " = {"
-  dynText val1
-  text "}"
-  --fldsCnt <- count =<< button "+"
-  flds <- replicateM 4 $ bibFieldInput "location" -- Works
-  -- flds <- (flip replicateM $ bibFieldInput "location") =<< fldsCnt -- Err
-  text "Hello"
-  --
-  el "br" blank
-  -- Create the button.
+  bibInputFields
+
+-- | A dynamically changing set of widgets
+
+-- Alternatives: reflex's collections use a Map of key/value pairs for
+-- a list of widgets. Should we use a) field type as key or b) an
+-- integer as key and a then tuple of Text Text as value?
+--
+-- b) would make widgets with the same field type possible. Then we
+-- have to combine values.
+--
+-- a) makes logic complicated. How to handle same field type? Making
+-- same field type impossible would be possible but complicated. Would
+-- that be user-friendly?
+bibInputFields :: MonadWidget t m => m ()
+bibInputFields = do
+  -- Create the + button for adding a new field.
   addNewField :: Event t () <- button "+"
   -- Number of clicks of the button.
   latestId :: Dynamic t Int <- count addNewField
@@ -52,9 +55,11 @@ bibInputWizard = el "div" $ do
   let modifyChildren :: Event t (Map.Map Int (Maybe ()))
       modifyChildren = fmap (\n -> n =: Just ()) $ updated latestId
   -- Draw the list of elements.
-  fields :: Dynamic t (Map.Map Int (Dynamic t T.Text,  Dynamic t T.Text)) <- listHoldWithKey mempty modifyChildren $ \n _ -> do
+  fields :: Dynamic t (Map.Map Int (Dynamic t T.Text,  Dynamic t T.Text)) <- listHoldWithKey mempty modifyChildren $ \n _ -> el "div" $ do
+    text $ T.pack $ show n
     -- Draw a single textbox, and return its current value as a Dynamic t Text
     bibFieldInput "blank"
+    
   -- Combine the inner Dynamics into the outer one
   -- let combinedValues :: Dynamic t (Map.Map Int (Dynamic t T.Text, Dynamic t T.Text))
   --     combinedValues = joinDynThroughMap fields
