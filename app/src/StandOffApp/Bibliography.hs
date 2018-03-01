@@ -14,27 +14,69 @@ import           Data.Maybe --(fromJust)
 import Control.Monad
 import Control.Lens
 
+--import qualified StandOff.Bibliography as CB
 
 import StandOffApp.DomUtils
 
+data Entry
+  = Entry
+  { _entryType :: T.Text           -- ^ e.g. book, article
+  , _entryKey :: T.Text            -- ^ the entry's (bibtex) key
+  , _fields :: [(T.Text, T.Text)]  -- ^ the fields. This is a list of
+                                  -- key-value tuples.
+  }
 
 
 bibInputWizard :: MonadWidget t m => m ()
 bibInputWizard = el "div" $ do
-  el "h2" $ text "Create New Bibliography Entry"
-  key <- labelWidget "Entry Key" "bibInputWizard.entryKey" $
-         textInput $ def & attributes .~ constDyn ("placeholder" =: "Key") 
-  typ <- labelWidget "Entry Type" "bibInputWizard.entryType" $
-         dropdown "book" (constDyn entryTypes) def
-  fields <- labelWidget "Entry Fields" "bibInputWizard.entryFields" $ bibInputFields def
-  -- live output
-  let selTyp = entryType <$> value typ
-  el "div" $ do
-    text "You selected '"
-    dynText $ value key
-    text "' to be of type '"
-    dynText selTyp
-    text "'."
+  let entryFieldsMap = Map.fromList entryFields
+  rec
+    el "h2" $ text "Create New Bibliography Entry"
+    key <- labelWidget "Entry Key" "bibInputWizard.entryKey" $
+           textInput $ def & attributes .~ constDyn ("placeholder" =: "Key")
+    typ <- labelWidget "Entry Type" "bibInputWizard.entryType" $
+           dropdown "book" (constDyn entryTypes) def
+    -- Fields
+    fields :: Dynamic t [(T.Text, T.Text)] <-
+      labelWidget "Entry Fields" "bibInputWizard.entryFields" $ do
+      rec
+        -- starting at -1 to get index on entryFields right
+        fldCnt :: Dynamic t Int <- foldDyn (+) (-1 :: Int) (1 <$ evIncrFldCnt)
+        -- On each addNewField event add a new field with Just "blank"
+        -- field type.
+        let -- modifyChildren :: Event t (Map.Map Int (Maybe ()))
+          modifyChildren = fmap (\n -> n =: Just ()) $ updated fldCnt
+        rows :: Dynamic t (Map.Map Int (Dynamic t T.Text, Dynamic t T.Text, Dynamic t Int)) <-
+          listHoldWithKey mempty modifyChildren $ \n _ -> el "div" $ do
+          -- Draw a row of dropdown, text input and deletion button.
+          let k = fromMaybe "unkown" (fmap fst (entryFields ^? element n))
+          el "div" $ do
+            fld <- dropdown k (constDyn entryFieldsMap) def
+            val <- textInput def -- $
+                   --def & attributes .~ constDyn ("placeholder" =: "field value")
+            evDel <- button "-"
+            text $ T.pack $ show n
+            delFldN :: Dynamic t Int <- foldDyn (*) (1 :: Int) (n <$ evDel)
+            return ((value fld), (value val), (n <$ delFldN))
+        -- Draw button to add a new row.
+        evIncrFldCnt <- button "+"
+        rowDels :: Dynamic t [Dynamic t Int] <-
+          return $ fmap (Map.foldr (\(_, _, d) acc -> d : acc) []) rows
+      return $ join $ fmap (sequence . (Map.foldr (\(k, v, _) acc -> (liftM2 (,) k v) : acc) [])) rows
+    -- live output
+    let entry = liftM3 Entry (value key) (value typ) fields
+    el "div" $ do
+      dynText $ fmap entry2BibtexPure entry
+  return ()
+
+
+entry2BibtexPure :: Entry -> T.Text
+entry2BibtexPure (Entry key typ flds) = T.concat
+  ["@", typ,
+  "{", key, ",\n",
+  (T.concat $ map (\(k, v) -> T.concat ["\t", k, "\t= {", v, "},\n"]) flds),
+  "}"]
+  
 
 -- | A dynamically changing set of widgets
 
