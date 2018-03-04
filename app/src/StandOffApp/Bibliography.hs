@@ -4,6 +4,8 @@
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+-- {-# LANGUAGE RankNTypes #-}
 module StandOffApp.Bibliography
   where
 
@@ -13,6 +15,7 @@ import qualified Data.Map as Map
 import           Data.Monoid((<>))
 import           Data.Maybe --(fromJust)
 import Control.Monad
+import Control.Monad.Fix
 import Control.Lens
 
 --import qualified StandOff.Bibliography as CB
@@ -24,12 +27,19 @@ data Entry
   { _entryType :: T.Text           -- ^ e.g. book, article
   , _entryKey :: T.Text            -- ^ the entry's (bibtex) key
   , _fields :: [(T.Text, T.Text)]  -- ^ the fields. This is a list of
-                                  -- key-value tuples.
+                                   -- key-value tuples.
   }
 makeLenses ''Entry
 
 
-bibInputWizard :: MonadWidget t m => m ()
+--bibInputWizard :: MonadWidget t m => m ()
+bibInputWizard :: ( DomBuilder t m
+                  , DomBuilderSpace m ~ GhcjsDomSpace
+                  , MonadFix m
+                  , MonadHold t m
+                  , PostBuild t m
+                  )
+                  => m ()
 bibInputWizard = el "div" $ do
   let entryFieldsMap = Map.fromList entryFields
   rec
@@ -69,10 +79,9 @@ bibInputWizard = el "div" $ do
     -- live output
     el "div" $ do
       formatEntryBibtex entry
-      -- dynText $ entry2BibtexPure entry
   return ()
 
-formatEntryBibtex :: MonadWidget t m => Dynamic t Entry -> m ()
+--formatEntryBibtex :: MonadWidget t m => Dynamic t Entry -> m ()
 formatEntryBibtex e = do
   text "@"
   dynText $ fmap (^.entryType) e
@@ -80,26 +89,70 @@ formatEntryBibtex e = do
   dynText $ fmap (^.entryKey) e
   text ",\n"
   el "br" blank
-  -- let flds :: Dynamic t [(T.Text, T.Text)]
-  --     flds = fmap (^.fields) e
-  -- flds :: Dynamic t [(T.Text, T.Text)] ->
-  --         fmap (^.fields) e
-  -- let z =  fmap (mapM_ formatField) $ fmap (^.fields) e
-  mapDynM formatField $ fmap (^.fields) e
+  let flds = fmap (^.fields) e
+  -- fmap ((mapM formatFld) . (^.fields)) e
+  -- fmap (\fs -> (map (formatFields flds)) [0 .. (length fs)]) flds
+  -- fmap (sample . current) mapDynM (formatFieldsMap flds) (fmap length flds)
+  -- _ <- mapDynM (formatField flds) $ fmap length flds
+
+  --_ <- fmap (sample . current) $
+  mapDynM (formatFieldRec flds) $ fmap length flds
+  -- (formatFieldRec flds) =<< sample (current (fmap length flds)) 
+  
+  n :: Int <- sample $ current $ fmap length flds
+  --formatField flds =<< (sample $ current $ fmap length flds)
+  --fmap (sample . current) $
+
+  --dynText $ fmap (T.pack . show . length) flds
+  
   text "}"
+  -- where
+
+formatFieldsMap fs n = do
+  mapM_ (formatFieldNth fs) [0..n]
+
+-- formatFields :: MonadWidget t m => Dynamic t [(T.Text, T.Text)] -> Int -> m ()
+-- formatFields :: MonadWidget t m => Dynamic t [(T.Text, T.Text)] -> Int -> m' ()
+formatFieldNth fs n = el "div" $ do
+  dynText $ fmap (fst . (!! n)) fs
+  text "= {"
+  dynText $ fmap (snd . (!! n)) fs
+  text "},"
+
+-- formatTest :: MonadWidget t m -> Dynamic t [(T.Text, T.Text)] -> Int -> m ()
+-- formatTest _ 0 = do el "br" blank
+formatTest fs n = do 
+  text $ T.pack $ show n
+  el "br" blank 
+
+--formatField :: MonadWidget t m => Dynamic t [(T.Text, T.Text)] -> Int -> m ()
+--formatField :: forall m t. (MonadSample t m) => Dynamic t [(T.Text, T.Text)] -> Int -> m ()
+--formatField :: forall m t. (DomBuilder t m) => Dynamic t [(T.Text, T.Text)] -> Int -> m ()
+-- formatField :: forall t m. (MonadSample t m, DomBuilder t m, PostBuild t m) => Dynamic t [(T.Text, T.Text)] -> Int -> m ()
+formatFieldRec _ 0 = do
+  text "no more fields"
+  el "br" blank
+formatFieldRec fs n = el "div" $ do
+  dynText $ fmap (fst . head) fs
+  text "= {"
+  dynText $ fmap (snd . head) fs
+  text "},"
+  formatFieldRec (fmap tail fs) (n - 1)
+  -- el "br" blank
+  
 
 -- formatField :: MonadWidget t m => (T.Text, T.Text) -> m ()
-formatField :: forall t m. (Reflex t, MonadSample t m) => (T.Text, T.Text) -> m ()
-formatField fld = el "div" $ do
-  --dynText $ fmap $ fst fld
+--formatField :: forall t m. (Reflex t, MonadSample t m) => Dynamic t (T.Text, T.Text) -> m ()
+formatFieldOFF fld = el "div" $ do
+  dynText $ fmap fst fld
   -- _fld <- return $ fst fld
   -- dynText $ wrapDyn $ fst fld
   text "= {"
-  -- dynText $ fmap $ snd fld
+  dynText $ fmap snd fld
   -- _val <- snd fld
   -- dynText $ wrapDyn $ snd fld
   text "},"
-  return ()
+  --return ()
 
 wrapDyn :: MonadWidget t m => a -> m (a)
 wrapDyn v = do

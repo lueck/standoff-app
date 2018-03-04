@@ -10,8 +10,10 @@ import           Data.Monoid((<>))
 import           Data.Maybe (fromJust)
 import Control.Monad
 
+import GHCJS.DOM.Types (JSM)
+
 import StandOffApp.Bibliography
 
-main :: IO ()
+main :: JSM ()
 main = mainWidget bibInputWizard
 
