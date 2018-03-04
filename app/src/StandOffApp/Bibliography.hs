@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell #-}
 module StandOffApp.Bibliography
   where
 
@@ -25,6 +26,7 @@ data Entry
   , _fields :: [(T.Text, T.Text)]  -- ^ the fields. This is a list of
                                   -- key-value tuples.
   }
+makeLenses ''Entry
 
 
 bibInputWizard :: MonadWidget t m => m ()
@@ -63,11 +65,45 @@ bibInputWizard = el "div" $ do
         rowDels :: Dynamic t [Dynamic t Int] <-
           return $ fmap (Map.foldr (\(_, _, d) acc -> d : acc) []) rows
       return $ join $ fmap (sequence . (Map.foldr (\(k, v, _) acc -> (liftM2 (,) k v) : acc) [])) rows
+    let entry = liftM3 Entry (value typ) (value key) fields
     -- live output
-    let entry = liftM3 Entry (value key) (value typ) fields
     el "div" $ do
-      dynText $ fmap entry2BibtexPure entry
+      formatEntryBibtex entry
+      -- dynText $ entry2BibtexPure entry
   return ()
+
+formatEntryBibtex :: MonadWidget t m => Dynamic t Entry -> m ()
+formatEntryBibtex e = do
+  text "@"
+  dynText $ fmap (^.entryType) e
+  text "{"
+  dynText $ fmap (^.entryKey) e
+  text ",\n"
+  el "br" blank
+  -- let flds :: Dynamic t [(T.Text, T.Text)]
+  --     flds = fmap (^.fields) e
+  -- flds :: Dynamic t [(T.Text, T.Text)] ->
+  --         fmap (^.fields) e
+  -- let z =  fmap (mapM_ formatField) $ fmap (^.fields) e
+  mapDynM formatField $ fmap (^.fields) e
+  text "}"
+
+-- formatField :: MonadWidget t m => (T.Text, T.Text) -> m ()
+formatField :: forall t m. (Reflex t, MonadSample t m) => (T.Text, T.Text) -> m ()
+formatField fld = el "div" $ do
+  --dynText $ fmap $ fst fld
+  -- _fld <- return $ fst fld
+  -- dynText $ wrapDyn $ fst fld
+  text "= {"
+  -- dynText $ fmap $ snd fld
+  -- _val <- snd fld
+  -- dynText $ wrapDyn $ snd fld
+  text "},"
+  return ()
+
+wrapDyn :: MonadWidget t m => a -> m (a)
+wrapDyn v = do
+  return v
 
 
 entry2BibtexPure :: Entry -> T.Text
@@ -138,8 +174,8 @@ bibFieldInput k n fldsMap = do
 entryTypes :: Map.Map T.Text T.Text
 entryTypes = Map.fromList [("book", "Book"), ("article", "Article"), ("inproceedings", "Inproceedings")]
 
-entryType :: T.Text -> T.Text
-entryType key = fromJust (Map.lookup key entryTypes)
+-- entryType :: T.Text -> T.Text
+-- entryType key = fromJust (Map.lookup key entryTypes)
 
 entryFields :: [(T.Text, T.Text)]
 entryFields = [("author", "Author"), ("title", "Title"), ("location" , "Location"), ("year", "Year")]
