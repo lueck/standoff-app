@@ -40,7 +40,7 @@ bibtexEntryDom e = do
   dynText $ fmap (^.entryKey) e
   text ",\n"
   el "br" blank
-  let flds = fmap (^.fields) e
+  let flds = fmap (^.entryFields) e
   
   -- mapDynM (bibtexFieldsMap flds) (fmap length flds)
   -- _ <- mapDynM (bibtexFieldMap flds) $ fmap length flds

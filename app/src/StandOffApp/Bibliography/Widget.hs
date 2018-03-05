@@ -1,18 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecursiveDo #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
--- {-# LANGUAGE RankNTypes #-}
 module StandOffApp.Bibliography.Widget
   where
 
 import Reflex.Dom hiding (element)
 import qualified Data.Text as T
 import qualified Data.Map as Map
-import           Data.Monoid((<>))
 import           Data.Maybe --(fromJust)
 import Control.Monad
 import Control.Monad.Fix
@@ -20,24 +14,27 @@ import Control.Lens
 
 import StandOffApp.DomUtils
 import StandOffApp.Bibliography.Xhr
-import StandOffApp.Bibliography.TypeDefs
-import StandOffApp.Bibliography.Bibtex
+import qualified StandOffApp.Bibliography.TypeDefs as E
 import StandOffApp.DynamicList
 
 
 -- not working with this signature: --
--- bibInputWizard :: ( DomBuilder t m
---                   , DomBuilderSpace m ~ GhcjsDomSpace
---                   , MonadFix m
---                   , MonadHold t m
---                   , PostBuild t m
---                   )
---                   => m ()
-bibInputWizard :: MonadWidget t m => m ()
-bibInputWizard = el "div" $ do
-  let initFlds = []
-  rec
-    el "h2" $ text "Create New Bibliography Entry"
+-- bibWidget :: ( DomBuilder t m
+--              , DomBuilderSpace m ~ GhcjsDomSpace
+--              , MonadFix m
+--              , MonadHold t m
+--              , PostBuild t m
+--              )
+--              => E.Entry
+--              -> m (Dynamic t E.Entry)
+
+-- | A widget for modifying a bibliographic entry.
+biblioWidget
+  :: MonadWidget t m
+  => E.Entry                 -- ^ initial entry
+  -> m (Dynamic t E.Entry)   -- ^ returns the modified/new entry
+biblioWidget initEntry = el "div" $ do
+  rec -- this recursive do could be left
     key <- labelWidget "Entry Key" "bibInputWizard.entryKey" $
            textInput $ def & attributes .~ constDyn ("placeholder" =: "Key")
     typ <- labelWidget "Entry Type" "bibInputWizard.entryType" $
@@ -50,19 +47,18 @@ bibInputWizard = el "div" $ do
         fldCnt :: Dynamic t Int <-
           foldDyn (+) (-1 :: Int) (1 <$ evIncrFldCnt)
         rows :: Dynamic t [(Dynamic t T.Text, Dynamic t T.Text, Event t ())] <-
-          dynamicList fieldWidget extractRemoveEv (const never) (addRow fldCnt) initFlds
+          dynamicList fieldWidget extractRemoveEv (const never) (addRow fldCnt) initFields
         evIncrFldCnt :: Event t () <-
           button "+"
       return $ join $ fmap (sequence . (map (\(k, v, _) -> (liftM2 (,) k v)))) rows
       
-    let entry = -- :: Dynamic t Entry =
-          liftM3 Entry (value typ) (value key) fields
-
-    -- live output
-    --el "div" $ do
-    --  bibtexEntry entry
-  return ()
+    let entry = -- :: Dynamic t E.Entry =
+          liftM3 E.Entry (value key) (value typ) fields
+  return entry
   where
+    initKey = (E._entryKey) initEntry 
+    initType = (E._entryType) initEntry
+    initFields = (E._entryFields) initEntry
     entryFieldsMap = Map.fromList entryFields
     fieldWidget
       :: MonadWidget t m
