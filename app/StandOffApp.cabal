@@ -18,10 +18,16 @@ cabal-version:       >=1.10
 
 executable StandOffApp
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       StandOffApp.DomUtils
+                     , StandOffApp.DynamicList
+                     , StandOffApp.Bibliography.Widget
+                     , StandOffApp.Bibliography.TypeDefs
+                     , StandOffApp.Bibliography.Xhr
+                     , StandOffApp.Bibliography.Bibtex
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
                      , reflex-dom >= 0.4
+                     --, reflex-dom-contrib
                      , containers
                      , text
                      , lens
