@@ -8,12 +8,15 @@ import Reflex.Dom
 import StandOffApp.Bibliography.Widget
 import StandOffApp.Bibliography.TypeDefs (emptyEntry)
 import StandOffApp.Bibliography.Bibtex
+import StandOffApp.Bibliography.Format
 
 main :: IO ()
 main = mainWidget $ do
   el "h2" $ text "Create New Bibliography Entry"
   entry <- biblioWidget emptyEntry
   -- live output
+  el "div" $ do
+    format entry
   el "div" $ do
     bibtexEntry entry
   return ()

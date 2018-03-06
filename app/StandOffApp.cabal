@@ -24,6 +24,7 @@ executable StandOffApp
                      , StandOffApp.Bibliography.TypeDefs
                      , StandOffApp.Bibliography.Xhr
                      , StandOffApp.Bibliography.Bibtex
+                     , StandOffApp.Bibliography.Format
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
                      , reflex-dom >= 0.4
