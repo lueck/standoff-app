@@ -14,26 +14,14 @@ import Control.Monad.Fix
 import Control.Lens
 
 import StandOffApp.Bibliography.TypeDefs
+import StandOffApp.Dynamic
+
+-- TODO: Get formatting right
 
 -- | Formatted output of a bibliographic 'Entry'.
-
--- format ::
---   ( DomBuilder t m
---   , DomBuilderSpace m ~ GhcjsDomSpace
---   , MonadFix m
---   , MonadHold t m
---   , PostBuild t m
---   )
---   => Dynamic t Entry
---   -> m ()
 format :: MonadWidget t m => Dynamic t Entry -> m ()
-format entry = do
-  -- FIXME: typ must be dynamic in the case statement, otherwise no
-  -- reformatting when the type is updated. So this does no update:
-  formattedType =<< (sample $ current $ fmap (^.entryType) entry)
-  -- Use mapDynM ? How?
-  --mapDynM formattedType $ fmap (^.entryType) entry
-  return ()
+format entry =
+  void $ bindDynM formattedType $ fmap (^.entryType) entry
   where
     --formattedType :: MonadWidget t m => T.Text -> m ()
     formattedType t = do
@@ -48,7 +36,8 @@ format entry = do
           ; title
           ; locPublYear
           }
-      return ()
+      -- returning entry just to return a dynamic
+      return entry
     --flds :: (Reflex t) => Dynamic t (Map.Map T.Text T.Text)
     flds = fmap (Map.fromList . (^.entryFields)) entry
     --fdom :: MonadWidget t m => T.Text -> T.Text -> T.Text -> T.Text -> m ()
