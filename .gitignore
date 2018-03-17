@@ -10,6 +10,7 @@
 dist
 dist-newstyle
 dist-ghcjs
+result
 
 .HTF
 
