@@ -21,13 +21,16 @@ executable StandOffApp
   other-modules:       StandOffApp.DomUtils
                      , StandOffApp.DynamicList
                      , StandOffApp.Dynamic
+                     , StandOffApp.Config
                      , StandOffApp.Bibliography.Widget
                      , StandOffApp.Bibliography.TypeDefs
                      , StandOffApp.Bibliography.Xhr
                      , StandOffApp.Bibliography.Bibtex
                      , StandOffApp.Bibliography.Format
+                     , StandOffApp.Auth.Widget
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
+                     , reflex >= 0.5
                      , reflex-dom >= 0.4
                      --, reflex-dom-contrib
                      , containers
