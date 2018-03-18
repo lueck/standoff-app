@@ -14,14 +14,12 @@ import Control.Monad.Fix
 import Control.Lens
 
 import StandOffApp.Bibliography.TypeDefs
-import StandOffApp.Dynamic
 
 -- TODO: Get formatting right
 
 -- | Formatted output of a bibliographic 'Entry'.
 format :: MonadWidget t m => Dynamic t Entry -> m ()
-format entry =
-  void $ bindDynM formattedType $ fmap (^.entryType) entry
+format entry = void $ dyn (formattedType . (^.entryType) <$> entry)
   where
     --formattedType :: MonadWidget t m => T.Text -> m ()
     formattedType t = do
@@ -36,8 +34,6 @@ format entry =
           ; title
           ; locPublYear
           }
-      -- returning entry just to return a dynamic
-      return entry
     --flds :: (Reflex t) => Dynamic t (Map.Map T.Text T.Text)
     flds = fmap (Map.fromList . (^.entryFields)) entry
     --fdom :: MonadWidget t m => T.Text -> T.Text -> T.Text -> T.Text -> m ()
