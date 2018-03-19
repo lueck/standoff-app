@@ -33,6 +33,7 @@ executable StandOffApp
                      , reflex >= 0.5
                      , reflex-dom >= 0.4
                      --, reflex-dom-contrib
+                     , aeson
                      , containers
                      , text
                      , lens
