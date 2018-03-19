@@ -7,7 +7,9 @@ import qualified Data.Text as T
 import Control.Monad
 import Control.Monad.Fix
 import Control.Lens
+import Control.Monad.Trans.Reader
 
+import StandOffApp.Config
 import StandOffApp.Bibliography.TypeDefs
 
 -- | Format a bibliographic entry to bibtex. This is a widget and
@@ -21,7 +23,7 @@ import StandOffApp.Bibliography.TypeDefs
 --                )
 --                => Dynamic t Entry
 --             -> m ()
-bibtexEntry :: MonadWidget t m => Dynamic t Entry -> m ()
+bibtexEntry :: MonadWidget t m => Dynamic t Entry -> ReaderT AppConfig m ()
 bibtexEntry e = el "div" $ do
   text "@"
   dynText $ fmap (^.entryType) e

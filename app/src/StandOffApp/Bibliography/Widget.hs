@@ -11,7 +11,9 @@ import           Data.Maybe --(fromJust)
 import Control.Monad
 import Control.Monad.Fix
 import Control.Lens
+import Control.Monad.Trans.Reader
 
+import StandOffApp.Config
 import StandOffApp.DomUtils
 import StandOffApp.Bibliography.Xhr
 import qualified StandOffApp.Bibliography.TypeDefs as E
@@ -32,7 +34,7 @@ import StandOffApp.DynamicList
 biblioWidget
   :: MonadWidget t m
   => E.Entry                 -- ^ initial entry
-  -> m (Dynamic t E.Entry)   -- ^ returns the modified/new entry
+  -> ReaderT AppConfig m (Dynamic t E.Entry)   -- ^ returns the modified/new entry
 biblioWidget initEntry = el "div" $ do
   rec -- this recursive do could be left
     key <- labelWidget "Entry Key" "bibInputWizard.entryKey" $

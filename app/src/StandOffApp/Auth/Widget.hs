@@ -11,13 +11,14 @@ import           Data.Maybe --(fromJust)
 import Control.Monad
 import Data.Monoid ((<>))
 import Data.Aeson (decode)
+import Control.Monad.Trans.Reader
 
-
-import StandOffApp.Config
+import StandOffApp.ConfigClassDefs
+import StandOffApp.Auth.ClassDefs
 import StandOffApp.DomUtils
 
 
-loginWidget :: MonadWidget t m => m (Dynamic t (Maybe T.Text))
+loginWidget :: (AuthConfig c, MonadWidget t m) => ReaderT c m (Dynamic t (Maybe T.Text))
 loginWidget = el "div" $ do
   user <- labelWidget "User Name" "login.username" $
           textInput $ def & attributes .~ constDyn ("placeholder" =: "User name")
@@ -26,7 +27,10 @@ loginWidget = el "div" $ do
   evLogin <- button "Login"
   -- See https://obsidian.systems/reflex-nyhug/#/step-26
   let loginData = tag (current (liftM2 (,) (value user) (value pwd))) evLogin
-  evRsp <- performRequestAsyncWithError $ uncurry buildReq <$> loginData
+  meth <- asks loginMethod
+  uri <- asks (absPath loginPath)
+  evRsp <- performRequestAsyncWithError $
+    (XhrRequest meth uri . uncurry rqCfg) <$> loginData
   let evToken = -- :: Event t (Maybe T.Text) =
         (fmap (either
                 (const Nothing) -- when the request fails
@@ -53,14 +57,11 @@ loginWidget = el "div" $ do
   -- return the token
   return token
   where
-    buildReq usr pwd = XhrRequest "POST" (configUri _cfg_loginPath cfg) rqCfg
-      where
-        rqCfg = def
-                & xhrRequestConfig_sendData .~ (credJson usr pwd)
-                & xhrRequestConfig_headers .~ Map.fromList [("Content-Type", "application/json")]
+    rqCfg usr pwd = def
+      & xhrRequestConfig_sendData .~ (credJson usr pwd)
+      & xhrRequestConfig_headers .~ Map.fromList [("Content-Type", "application/json")]
     credJson usr pwd = "{ \"login\": \""
                        <> usr
                        <> "\", \"pwd\": \""
                        <> pwd
                        <> "\" }"
-    cfg = defaultConfig -- TODO

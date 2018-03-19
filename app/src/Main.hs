@@ -4,16 +4,23 @@
 module Main where
 
 import Reflex.Dom
+import Control.Monad.Trans.Reader
+
+import StandOffApp.Config
 
 import StandOffApp.Bibliography.Widget
 import StandOffApp.Bibliography.TypeDefs (emptyEntry)
 import StandOffApp.Bibliography.Bibtex
 import StandOffApp.Bibliography.Format
-
 import StandOffApp.Auth.Widget
 
 main :: IO ()
 main = mainWidget $ do
+  runReaderT appWidget defaultConfig
+
+-- | The App's main widget.
+appWidget :: MonadWidget t m => ReaderT AppConfig m ()
+appWidget = do
 
   el "h2" $ text "Login"
   loginWidget

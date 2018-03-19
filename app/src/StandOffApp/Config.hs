@@ -7,29 +7,40 @@ import Data.Text
 import Control.Lens
 import Data.Monoid ((<>))
 
+import StandOffApp.ConfigClassDefs
 
-data StandOffAppConfig
-  = StandOffAppConfig
+import StandOffApp.Auth.ClassDefs
+
+
+data AppConfig
+  = AppConfig
   { _cfg_baseUri :: Text -- ^ base uri
   , _cfg_loginPath :: Text -- ^ uri of login
   , _cfg_loginMethod :: Text -- ^ method of login request
   } deriving (Show)
 
-makeLenses ''StandOffAppConfig
+makeLenses ''AppConfig
 
 
 -- | A default configuration. It works with a locally running
 -- PostgREST app.
-defaultConfig :: StandOffAppConfig
+defaultConfig :: AppConfig
 defaultConfig =
-  StandOffAppConfig
+  AppConfig
   { _cfg_baseUri = "http://127.0.0.1:3000"
   , _cfg_loginPath = "/rpc/login"
   , _cfg_loginMethod = "POST"
   }
 
 
--- | Return a uri for a record field (path) and a config.
-configUri :: (StandOffAppConfig -> Text) -> StandOffAppConfig -> Text
-configUri fld cfg = _cfg_baseUri cfg <> fld cfg
+-- * Instances
 
+-- | In order to decouple the apps submodules AppConfig is an instance
+-- of the submodules' configurations.
+
+instance AppConfigC AppConfig where
+  baseUri = _cfg_baseUri
+
+instance AuthConfig AppConfig where
+  loginPath = _cfg_loginPath
+  loginMethod = _cfg_loginMethod
