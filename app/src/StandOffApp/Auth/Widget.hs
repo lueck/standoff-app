@@ -29,7 +29,7 @@ loginWidget = el "div" $ do
   evRsp <- performRequestAsyncWithError $ uncurry buildReq <$> loginData
   let evToken = -- :: Event t (Maybe T.Text) =
         (fmap (either
-               (const Nothing) -- when the request fails
+                (const Nothing) -- when the request fails
                 (\r -> fmap T.pack $ -- convert String to Text
                        join $  -- Just Nothing -> Nothing etc.
                        fmap
