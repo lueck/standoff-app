@@ -35,7 +35,9 @@ appView :: (MonadReader (Model t) m, MonadDynamicWriter t (Aggregate t) m, Monad
 --appView :: (MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
 appView = do
   el "h2" $ text "Login"
-  --loginWidget
+  loginWidget
+
+  showToken
   
   -- el "h2" $ text "Create New Bibliography Entry"
   -- entry <- biblioWidget emptyEntry

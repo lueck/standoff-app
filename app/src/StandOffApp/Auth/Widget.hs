@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 module StandOffApp.Auth.Widget
   where
 
+import Reflex
 import Reflex.Dom hiding (element)
 import Control.Lens
 import qualified Data.Text as T
@@ -11,14 +13,19 @@ import           Data.Maybe --(fromJust)
 import Control.Monad
 import Data.Monoid ((<>))
 import Data.Aeson (decode)
-import Control.Monad.Trans.Reader
+import Control.Monad.Reader
 
+import StandOffApp.Model
 import StandOffApp.ConfigClassDefs
 import StandOffApp.Auth.ClassDefs
 import StandOffApp.DomUtils
 
+import StandOffApp.Config
 
-loginWidget :: (AuthConfig c, MonadWidget t m) => ReaderT c m (Dynamic t (Maybe T.Text))
+
+--loginWidget :: MonadWidget t m => ReaderT AppConfig m ()
+loginWidget :: (Reflex t, MonadReader (Model t) m, MonadDynamicWriter t (Aggregate t) m, MonadWidget t m) => m ()
+--loginWidget :: (MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
 loginWidget = el "div" $ do
   user <- labelWidget "User Name" "login.username" $
           textInput $ def & attributes .~ constDyn ("placeholder" =: "User name")
@@ -27,8 +34,8 @@ loginWidget = el "div" $ do
   evLogin <- button "Login"
   -- See https://obsidian.systems/reflex-nyhug/#/step-26
   let loginData = tag (current (liftM2 (,) (value user) (value pwd))) evLogin
-  meth <- asks loginMethod
-  uri <- asks (absPath loginPath)
+  meth <- asks (loginMethod . _model_config)
+  uri <- asks ((absPath loginPath) . _model_config)
   evRsp <- performRequestAsyncWithError $
     (XhrRequest meth uri . uncurry rqCfg) <$> loginData
   let evToken = -- :: Event t (Maybe T.Text) =
@@ -41,8 +48,11 @@ loginWidget = el "div" $ do
                        -- parse the response to a map
                        ((decodeXhrResponse r) :: Maybe (Map.Map String String))))
          evRsp)
+  --tellEvent $ fmap (const $ Aggregate evToken) evRsp
+  
   token :: Dynamic t (Maybe T.Text) <- holdDyn Nothing evToken
-
+  tellDyn $ fmap (const $ Aggregate token) token
+  
   -- print the response
   let evResult = (either (T.pack . show) (fromMaybe "" . _xhrResponse_responseText)) <$> evRsp
   el "div" $ do
@@ -55,7 +65,7 @@ loginWidget = el "div" $ do
     dynText $ fmap (fromMaybe "") token
   
   -- return the token
-  return token
+  return ()
   where
     rqCfg usr pwd = def
       & xhrRequestConfig_sendData .~ (credJson usr pwd)
@@ -65,3 +75,10 @@ loginWidget = el "div" $ do
                        <> "\", \"pwd\": \""
                        <> pwd
                        <> "\" }"
+
+showToken :: (Reflex t, MonadReader (Model t) m, MonadDynamicWriter t (Aggregate t) m, MonadWidget t m) => m ()
+showToken = el "div" $ do
+  el "h2" $ do
+    text "Your authentication token"
+  tok <- asks _model_authToken
+  dynText $ fmap (fromMaybe "") tok
