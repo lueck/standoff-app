@@ -21,6 +21,7 @@ executable StandOffApp
   other-modules:       StandOffApp.DomUtils
                      , StandOffApp.DynamicList
                      , StandOffApp.Config
+                     , StandOffApp.Model
                      , StandOffApp.ConfigClassDefs
                      , StandOffApp.Bibliography.Widget
                      , StandOffApp.Bibliography.TypeDefs
@@ -35,6 +36,7 @@ executable StandOffApp
                      , reflex-dom >= 0.4
                      --, reflex-dom-contrib
                      , transformers
+                     , mtl
                      , aeson
                      , containers
                      , text
