@@ -4,12 +4,11 @@ module StandOffApp.Model
 
 import Reflex.Dom
 import Reflex
-import Data.Monoid
+import Data.Semigroup
 import Data.Text
 import Control.Monad
 
 import StandOffApp.Config
-
 
 type AuthToken = Text
 
@@ -21,16 +20,15 @@ data Model t
 
 data Aggregate t
   = Aggregate
-  { _agg_authToken :: Dynamic t (Maybe AuthToken)
+  { _agg_evAuthToken :: Event t (Maybe AuthToken)
   }
 
-instance (Reflex t) => Monoid (Aggregate t) where
-  mempty = Aggregate (constDyn Nothing)
-  mappend e _ = e
+instance (Reflex t) => Semigroup (Aggregate t) where
+  (<>) a _ = a
 
-appModel :: MonadWidget t m => Dynamic t (Aggregate t) -> AppConfig -> m (Model t)
+appModel :: MonadWidget t m => Event t (Aggregate t) -> AppConfig -> m (Model t)
 appModel aggregate conf = do
-  let token = join $ fmap _agg_authToken aggregate
-  --tok <- holdDyn Nothing evToken
+  let evToken = coincidence (_agg_evAuthToken <$> aggregate)
+  token <- holdDyn Nothing evToken
   return $ Model token conf
     

@@ -23,9 +23,7 @@ import StandOffApp.DomUtils
 import StandOffApp.Config
 
 
---loginWidget :: MonadWidget t m => ReaderT AppConfig m ()
-loginWidget :: (Reflex t, MonadReader (Model t) m, MonadDynamicWriter t (Aggregate t) m, MonadWidget t m) => m ()
---loginWidget :: (MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
+loginWidget :: (MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
 loginWidget = el "div" $ do
   user <- labelWidget "User Name" "login.username" $
           textInput $ def & attributes .~ constDyn ("placeholder" =: "User name")
@@ -48,10 +46,7 @@ loginWidget = el "div" $ do
                        -- parse the response to a map
                        ((decodeXhrResponse r) :: Maybe (Map.Map String String))))
          evRsp)
-  --tellEvent $ fmap (const $ Aggregate evToken) evRsp
-  
-  token :: Dynamic t (Maybe T.Text) <- holdDyn Nothing evToken
-  tellDyn $ fmap (const $ Aggregate token) token
+  tellEvent $ fmap (const $ Aggregate evToken) evRsp
   
   -- print the response
   let evResult = (either (T.pack . show) (fromMaybe "" . _xhrResponse_responseText)) <$> evRsp
@@ -59,12 +54,7 @@ loginWidget = el "div" $ do
     text "Response:"
     el "br" blank
     dynText =<< holdDyn "" evResult
-  el "div" $ do
-    text "Your Authentication Token: "
-    el "br" blank
-    dynText $ fmap (fromMaybe "") token
   
-  -- return the token
   return ()
   where
     rqCfg usr pwd = def
@@ -76,7 +66,7 @@ loginWidget = el "div" $ do
                        <> pwd
                        <> "\" }"
 
-showToken :: (Reflex t, MonadReader (Model t) m, MonadDynamicWriter t (Aggregate t) m, MonadWidget t m) => m ()
+showToken :: (Reflex t, MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
 showToken = el "div" $ do
   el "h2" $ do
     text "Your authentication token"

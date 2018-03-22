@@ -26,13 +26,11 @@ appWidget :: MonadWidget t m => AppConfig -> m ()
 appWidget conf = do
   rec
     model <- appModel aggregate conf
-    (_, aggregate) <- runDynamicWriterT $ flip runReaderT model $ do
+    (_, aggregate) <- runEventWriterT $ flip runReaderT model $ do
       appView
   pure ()
-  --return ()
 
-appView :: (MonadReader (Model t) m, MonadDynamicWriter t (Aggregate t) m, MonadWidget t m) => m ()
---appView :: (MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
+appView :: (MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
 appView = do
   el "h2" $ text "Login"
   loginWidget
