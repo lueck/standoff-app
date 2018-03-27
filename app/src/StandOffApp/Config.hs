@@ -9,7 +9,7 @@ import Data.Monoid ((<>))
 
 import StandOffApp.ConfigClassDefs
 
-import StandOffApp.Auth.ClassDefs
+-- import StandOffApp.Auth.Model
 
 
 data AppConfig
@@ -31,16 +31,3 @@ defaultConfig =
   , _cfg_loginPath = "/rpc/login"
   , _cfg_loginMethod = "POST"
   }
-
-
--- * Instances
-
--- | In order to decouple the apps submodules AppConfig is an instance
--- of the submodules' configurations.
-
-instance AppConfigC AppConfig where
-  baseUri = _cfg_baseUri
-
-instance AuthConfig AppConfig where
-  loginPath = _cfg_loginPath
-  loginMethod = _cfg_loginMethod
