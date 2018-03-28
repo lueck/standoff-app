@@ -1,29 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
 module StandOffApp.Auth.Widget
   where
 
 import Reflex
 import Reflex.Dom hiding (element)
---import Lens.Micro
 import qualified Data.Text as T
 import qualified Data.Map as Map
 import           Data.Maybe --(fromJust)
 import Control.Monad
 import Data.Monoid ((<>))
-import Data.Aeson (decode)
 import Data.Default.Class
 import Control.Monad.Reader
-import Data.Semigroup hiding ((<>))
+import Control.Lens
 
-import StandOffApp.Auth.Model
-import StandOffApp.ConfigClassDefs
+--import StandOffApp.Auth.Model
 import StandOffApp.Model
 
-
-loginWidget :: (AuthModel l, MonadWidget t m, Semigroup w, Default w, EventBubbleC w, MonadReader l m, EventWriter t w m) => m ()
+loginWidget :: (OuterBubble w t, Default w, AuthModel l, MonadWidget t m, MonadReader l m, EventWriter t w m) => m ()
 loginWidget = el "div" $ do
   user <- labelWidget "User Name" "login.username" $
           textInput $ def & attributes .~ constDyn ("placeholder" =: "User name")
@@ -40,15 +34,7 @@ loginWidget = el "div" $ do
   let evToken = -- :: Event t (Maybe T.Text) =
         (fmap parseTok evRsp)
 
-  -- push the token to the event writer
-  --getBubble <- asks authEventBubble
-  -- tellEvent $ fmap (const $ def -- (def :: (Semigroup w) => w)
-  --                    & getBubble .~ (def
-  --                                     & authEvBub_evToken .~ evToken)) evRsp
-  let authBub =
-        fmap (const $ defaultAuthEventBubble & authEvBub_evToken .~ evToken) evRsp --  :: (Reflex t) => AuthEventBubble t
-  -- tellEvent $ fmap (const $ def
-  --                    & evBub_authBubble .~ ) evRsp
+  tellEvent $ fmap (const (def & getAuthBubble .~ (AuthEventBubble evToken))) evRsp
   
   -- -- print the response
   -- parseErr <- asks parseError
@@ -70,12 +56,11 @@ loginWidget = el "div" $ do
                        <> "\" }"
 
 -- | Widget that displays the authentication token.
-showToken :: (AuthModel l, MonadWidget t m, Semigroup w, MonadReader l m, EventWriter t w m) => m ()
+showToken :: (AuthModelTime l t, MonadWidget t m, MonadReader l m) => m ()
 showToken = el "div" $ do
-  el "h2" $ do
-    text "Your authentication token"
-  -- tok <- asks authToken
-  -- dynText $ fmap (fromMaybe "") tok
+  el "h2" $ text "Your authentication token"
+  tok <- asks authToken
+  dynText $ fmap (fromMaybe "") tok
 
 --labelWidget :: MonadWidget t m => T.Text -> T.Text -> k -> m a
 labelWidget label xid widget = do

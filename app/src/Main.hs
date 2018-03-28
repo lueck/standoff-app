@@ -11,6 +11,7 @@ import Control.Monad.Reader
 
 import StandOffApp.Config
 import StandOffApp.Model
+import StandOffApp.ConfigInst
 
 import StandOffApp.Bibliography.Widget
 import StandOffApp.Bibliography.TypeDefs (emptyEntry)
@@ -25,12 +26,12 @@ main = mainWidget (appWidget defaultConfig)
 appWidget :: MonadWidget t m => AppConfig -> m ()
 appWidget conf = do
   rec
-    model <- appModel aggregate conf
-    (_, aggregate) <- runEventWriterT $ flip runReaderT model $ do
+    model <- appModel bubble conf
+    (_, bubble) <- runEventWriterT $ flip runReaderT model $ do
       appView
   pure ()
 
-appView :: (MonadReader (Model t) m, EventWriter t (Aggregate t) m, MonadWidget t m) => m ()
+appView :: (MonadReader (Model t) m, EventWriter t (EventBubble t) m, MonadWidget t m) => m ()
 appView = do
   el "h2" $ text "Login"
   loginWidget
