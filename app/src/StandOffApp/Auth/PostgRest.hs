@@ -5,10 +5,21 @@ import Reflex.Dom
 import qualified Data.Text as T
 import qualified Data.Map as Map
 import Control.Monad
+import Data.Monoid ((<>))
 
 import StandOffApp.Auth.Model
 
 -- * /rpc/login
+
+-- | Build a login request.
+makeLoginRequest :: T.Text -> T.Text -> XhrRequestConfig T.Text
+makeLoginRequest usr pwd =
+  def
+  & xhrRequestConfig_sendData .~ credJson
+  & xhrRequestConfig_headers .~ Map.fromList [("Content-Type", "application/json")]
+  where
+    credJson = "{ \"login\": \"" <> usr <> "\", \"pwd\": \"" <> pwd <> "\" }"
+
 
 -- | Parse the JSON web token returned by PostgREST on /rpc/login.
 parseJwt :: Either XhrException XhrResponse -> Maybe AuthToken

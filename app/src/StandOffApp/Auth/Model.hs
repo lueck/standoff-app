@@ -30,6 +30,8 @@ class AuthConfig m where
   loginUri :: m -> Text -- ^ uri (base uri + path) of login rpc
   loginMethod :: m -> Text -- ^ http method for login rpc
   parseAuthToken :: (m -> (Either XhrException XhrResponse -> Maybe AuthToken)) -- ^ Function for parsing the token from a xhr response.
+  loginRequest :: m -> (Text -> Text -> XhrRequestConfig Text)
+  authHeadlineDepth :: m -> Int -- ^ Whether "h2", "h3" in widgets.
 
 -- | Like 'AuthConfig' but parametrized with reflex time line.
 class AuthModel m t where

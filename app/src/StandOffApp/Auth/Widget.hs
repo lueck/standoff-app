@@ -18,23 +18,26 @@ import StandOffApp.Auth.Model
 
 loginWidget :: (MonadWidget t m,
                 MonadReader l m, AuthConfig l,
-                EventWriter t w m, OuterBubble w t, Default w) => m ()
-loginWidget = el "div" $ do
-  user <- labelWidget "User Name" "login.username" $
+                EventWriter t w m, OuterBubble w t, Default w)
+               => m ()
+loginWidget = elClass "div" "form login" $ do
+  depth :: Int <- asks authHeadlineDepth
+  el ("h" <> (T.pack $ show depth)) $ text "Login"
+  user <- labelWidget "User Name" "formfield login.username" $
           textInput $ def & attributes .~ constDyn ("placeholder" =: "User name")
-  pwd <- labelWidget "Password" "login.password" $
+  pwd <- labelWidget "Password" "formfield login.password" $
          textInput $ def & attributes .~ constDyn ("placeholder" =: "Password")
   evLogin <- button "Login"
   -- See https://obsidian.systems/reflex-nyhug/#/step-26
   let loginData = tag (current (liftM2 (,) (value user) (value pwd))) evLogin
   meth <- asks loginMethod
   uri <- asks loginUri
+  rqCfg <- asks loginRequest
   evRsp <- performRequestAsyncWithError $
     (XhrRequest meth uri . uncurry rqCfg) <$> loginData
   parseTok <- asks parseAuthToken
   let evToken = -- :: Event t (Maybe T.Text) =
         (fmap parseTok evRsp)
-
   tellEvent $ fmap (const (def & getAuthBubble .~ (AuthEventBubble evToken))) evRsp
   
   -- -- print the response
@@ -46,27 +49,21 @@ loginWidget = el "div" $ do
   --   dynText =<< holdDyn "" evResult
   
   return ()
-  where
-    rqCfg usr pwd = def
-      & xhrRequestConfig_sendData .~ (credJson usr pwd)
-      & xhrRequestConfig_headers .~ Map.fromList [("Content-Type", "application/json")]
-    credJson usr pwd = "{ \"login\": \""
-                       <> usr
-                       <> "\", \"pwd\": \""
-                       <> pwd
-                       <> "\" }"
 
 -- | Widget that displays the authentication token.
-showToken :: (AuthModel l t, MonadWidget t m, MonadReader l m) => m ()
-showToken = el "div" $ do
-  el "h2" $ text "Your authentication token"
+showToken :: (MonadWidget t m,
+              MonadReader l m, AuthModel l t, AuthConfig l)
+             => m ()
+showToken = elClass "div" "showToken" $ do
+  depth :: Int <- asks authHeadlineDepth
+  el ("h" <> (T.pack $ show depth)) $ text "Your authentication token"
   tok <- asks authToken
   dynText $ fmap (fromMaybe "") tok
 
 --labelWidget :: MonadWidget t m => T.Text -> T.Text -> k -> m a
-labelWidget label xid widget = do
-  el "div" $ do
-    el "div" $ text label
+labelWidget label clas widget = do
+  elClass "div" clas $ do
+    elClass "div" "label" $ text label
     widget
 
 -- | Show the whole response body.
