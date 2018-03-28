@@ -13,75 +13,21 @@ import Control.Lens
 import Data.Default.Class
 
 import StandOffApp.Config
---import StandOffApp.Auth.Model
 
-type AuthToken = Text
+import StandOffApp.Auth.Model
 
--- | A record of values that are accessible throughout the whole app.
-data AuthData t = AuthData
-  { _auth_token :: Dynamic t (Maybe AuthToken)
-  --, user :: Dynamic t (Maybe Text)
-  }
-
+-- | The Model accessible throughout the app's widgets. It consists of
+-- static configuraton data and dynamic data, i.e. data, that changes
+-- over time.
 data Model t
   = Model
-  { _model_config :: AppConfig
-  , _model_auth :: AuthData t
+  { _model_config :: AppConfig -- ^ configuration
+  , _model_auth :: AuthData t -- ^ dynamic data related to authentication
   }
-
-
--- * EventBubble
-
--- | A record for all the events (values) that have to go up in the
--- dom to be made accessible throughout the app.
-data AuthEventBubble t = AuthEventBubble
-  { _authEvBub_evToken :: Event t (Maybe AuthToken) -- ^ fired when xhr returned a token
-  }
-
-makeLenses ''AuthEventBubble
-
--- | The EventBubble must be an instance of 'Default', so that it can
--- easily be created by events pushed into the event writer by other
--- modules.
-instance (Reflex t) => Default (AuthEventBubble t) where
-  def = AuthEventBubble
-        { _authEvBub_evToken = never
-        }
-
-defaultAuthEventBubble :: Reflex t => AuthEventBubble t
-defaultAuthEventBubble = def
-
--- | Combination of events in the event writer.
-instance (Reflex t) => Semigroup (AuthEventBubble t) where
-  (<>) a b = AuthEventBubble
-             { _authEvBub_evToken = a^.authEvBub_evToken <> b^.authEvBub_evToken
-             }
-
 
 makeLenses ''Model
 
-data EventBubble t
-  = EventBubble
-  { _evBub_authBubble :: AuthEventBubble t
-  }
-
-makeLenses ''EventBubble
-
-instance (Reflex t) => Semigroup (EventBubble t) where
-  (<>) a b = EventBubble
-             { _evBub_authBubble = _evBub_authBubble a <> _evBub_authBubble b
-             }
-
-instance (Reflex t) => Default (EventBubble t) where
-  def = EventBubble
-        { _evBub_authBubble = def
-        }
-
-defaultEventBubble :: (Reflex t) => EventBubble t
-defaultEventBubble = EventBubble
-                     { _evBub_authBubble = def
-                     }
-
+-- | Make dynamic data from propagated events.
 appModel :: MonadWidget t m => Event t (EventBubble t) -> AppConfig -> m (Model t)
 appModel bub conf = do
   let evAuth = fmap _evBub_authBubble bub
@@ -91,35 +37,27 @@ appModel bub conf = do
     , _model_auth = auth
     }
 
+-- * Event propagation
 
--- ############# taken from auth module ############
+-- | Events are propagated to the top level widget via the
+-- 'EventBubble'. For convienent construction of the bubble
+-- 'EventBubble' is an instance of 'Default' and a lens.
+data EventBubble t
+  = EventBubble
+  { _evBub_authBubble :: AuthEventBubble t
+  }
 
+makeLenses ''EventBubble
 
--- * Model
+instance (Reflex t) => Default (EventBubble t) where
+  def = EventBubble
+        { _evBub_authBubble = def
+        }
 
--- | Return 'AuthData' from a 'AuthEventBubble'.
-authModel :: MonadWidget t m => Event t (AuthEventBubble t) -> m (AuthData t)
-authModel bubble = do
-  let evToken = coincidence (_authEvBub_evToken <$> bubble)
-  tok <- holdDyn Nothing evToken
-  return $ AuthData
-    { _auth_token = tok
-    }
-
--- * Config
-
--- | Aspects of the app's model that has to be defined in order to make
--- this authentication module work.
-class AuthModel m where
-  loginUri :: m -> Text -- ^ uri (base uri + path) of login rpc
-  loginMethod :: m -> Text -- ^ http method for login rpc
-  parseAuthToken :: (m -> (Either XhrException XhrResponse -> Maybe AuthToken)) -- ^ Function for parsing the token from a xhr response.
-
--- | Like 'AuthModel' but parametrized with reflex time line.
-class AuthModelTime m t where
-  authToken :: m -> Dynamic t (Maybe AuthToken) -- ^ getter for the token
-
--- | The event bubble containing the 'AuthEventBubble'. It must have a
--- setter for a field containing the 'AuthEventBubble'.
-class (Reflex t, Semigroup o) => OuterBubble o t where
-  getAuthBubble :: ASetter o o (AuthEventBubble t) (AuthEventBubble t)
+-- | The events are combined monoidally (semigroup'isch). That's
+-- important for getting simultaneous events right. See
+-- https://www.reddit.com/r/reflexfrp/comments/85ov8a/how_to_share_auth_tokens_throughout_all_the_app
+instance (Reflex t) => Semigroup (EventBubble t) where
+  (<>) a b = EventBubble
+             { _evBub_authBubble = _evBub_authBubble a <> _evBub_authBubble b
+             }

@@ -6,8 +6,7 @@ import qualified Data.Text as T
 import qualified Data.Map as Map
 import Control.Monad
 
---import StandOffApp.Auth.Model
-import StandOffApp.Model
+import StandOffApp.Auth.Model
 
 -- * /rpc/login
 

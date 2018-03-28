@@ -14,10 +14,11 @@ import Data.Default.Class
 import Control.Monad.Reader
 import Control.Lens
 
---import StandOffApp.Auth.Model
-import StandOffApp.Model
+import StandOffApp.Auth.Model
 
-loginWidget :: (OuterBubble w t, Default w, AuthModel l, MonadWidget t m, MonadReader l m, EventWriter t w m) => m ()
+loginWidget :: (MonadWidget t m,
+                MonadReader l m, AuthConfig l,
+                EventWriter t w m, OuterBubble w t, Default w) => m ()
 loginWidget = el "div" $ do
   user <- labelWidget "User Name" "login.username" $
           textInput $ def & attributes .~ constDyn ("placeholder" =: "User name")
@@ -56,7 +57,7 @@ loginWidget = el "div" $ do
                        <> "\" }"
 
 -- | Widget that displays the authentication token.
-showToken :: (AuthModelTime l t, MonadWidget t m, MonadReader l m) => m ()
+showToken :: (AuthModel l t, MonadWidget t m, MonadReader l m) => m ()
 showToken = el "div" $ do
   el "h2" $ text "Your authentication token"
   tok <- asks authToken

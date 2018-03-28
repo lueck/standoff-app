@@ -3,11 +3,10 @@ module StandOffApp.ConfigClassDefs
 
 import Data.Text
 import Data.Monoid ((<>))
-import Data.Semigroup hiding ((<>))
 
 
 -- | Very basic and common features of the configuration.
-class AppConfigC c where
+class BaseConfig c where
   -- | Returns the base uri.
   baseUri :: c -> Text
   -- | Returns an absolute path for a given getter. Usage:
@@ -16,7 +15,3 @@ class AppConfigC c where
           -> c           -- ^ the config
           -> Text        -- ^ the absolute Path is returned
   absPath rel cfg = baseUri cfg <> rel cfg
-
-
-class EventBubbleC b where
-  authEventBubble :: (Semigroup a) => b -> a

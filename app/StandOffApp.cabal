@@ -21,15 +21,17 @@ executable StandOffApp
   other-modules:       StandOffApp.DomUtils
                      , StandOffApp.DynamicList
                      , StandOffApp.Config
-                     , StandOffApp.Model
+                     , StandOffApp.ConfigInst
                      , StandOffApp.ConfigClassDefs
+                     , StandOffApp.Model
                      , StandOffApp.Bibliography.Widget
                      , StandOffApp.Bibliography.TypeDefs
                      , StandOffApp.Bibliography.Xhr
                      , StandOffApp.Bibliography.Bibtex
                      , StandOffApp.Bibliography.Format
+                     , StandOffApp.Auth.Model
                      , StandOffApp.Auth.Widget
-                     , StandOffApp.Auth.ClassDefs
+                     , StandOffApp.Auth.PostgRest
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
                      , reflex >= 0.5
@@ -40,7 +42,7 @@ executable StandOffApp
                      , aeson
                      , containers
                      , text
-                     , microlens
                      , lens
+                     , data-default-class
   hs-source-dirs:      src
   default-language:    Haskell2010
