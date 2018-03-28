@@ -1,24 +1,23 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module StandOffApp.Model
   where
 
 import Reflex.Dom
 import Reflex
 import Data.Semigroup
-import Data.Text
-import Control.Monad
 import Control.Lens
 import Data.Default.Class
+import Control.Monad.Trans.Reader
 
 import StandOffApp.Config
 
 import StandOffApp.Auth.Model
 
--- | The Model accessible throughout the app's widgets. It consists of
--- static configuraton data and dynamic data, i.e. data, that changes
--- over time.
+-- * Model
+
+-- | The Model is accessible in all widgets throughout the app. It
+-- consists of static configuraton data and dynamic data, i.e. data,
+-- that changes over time.
 data Model t
   = Model
   { _model_config :: AppConfig -- ^ configuration
@@ -61,3 +60,19 @@ instance (Reflex t) => Semigroup (EventBubble t) where
   (<>) a b = EventBubble
              { _evBub_authBubble = _evBub_authBubble a <> _evBub_authBubble b
              }
+
+-- * Widget Types
+
+-- | A type alias for transformations with a 'ReaderT' and
+-- 'EventWriterT' that can be used with a 'MonadWidget'.
+--
+-- ==== __Examples__
+--
+-- Basic usage:
+--
+-- >>> yourWidget :: MonadWidget t m => AppWidget t m ()
+type AppWidget t m a = ReaderT
+                       (Model t)
+                       (EventWriterT t (EventBubble t) m)
+                       a
+

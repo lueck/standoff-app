@@ -24,6 +24,7 @@ executable StandOffApp
                      , StandOffApp.ConfigInst
                      , StandOffApp.ConfigClassDefs
                      , StandOffApp.Model
+                     , StandOffApp.App
                      , StandOffApp.Bibliography.Widget
                      , StandOffApp.Bibliography.TypeDefs
                      , StandOffApp.Bibliography.Xhr
