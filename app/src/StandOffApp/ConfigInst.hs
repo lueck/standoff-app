@@ -30,6 +30,7 @@ instance (Reflex t) => AuthConfig (Model t) where
   loginUri = (\c -> _cfg_baseUri c <> _cfg_loginPath c) . _model_config
   loginMethod = _cfg_loginMethod . _model_config
   parseAuthToken = _cfg_parseToken . _model_config
+  parseLoginError = _cfg_parseLoginError . _model_config
   loginRequest = _cfg_loginRequest . _model_config
   authHeadlineDepth = _cfg_headlineDepth . _model_config
 

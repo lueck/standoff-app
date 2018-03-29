@@ -33,16 +33,3 @@ parseJwt rsp =
     -- parse the response to a map
     ((decodeXhrResponse r) :: Maybe (Map.Map String String)))
   rsp
-  
--- | Parse the error message returned by PostgREST on rpc/login.
-parseLoginError :: Either XhrException XhrResponse -> Maybe T.Text
-parseLoginError rsp =
-  either
-  (Just . T.pack . show) -- when the request fails
-  (\r -> fmap T.pack $ -- convert String to Text
-    join $  -- Just Nothing -> Nothing etc.
-    fmap
-    (Map.lookup "Hint") -- get the error message from postgrest
-    -- parse the response to a map
-    ((decodeXhrResponse r) :: Maybe (Map.Map String String)))
-  rsp

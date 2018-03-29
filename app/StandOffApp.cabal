@@ -25,6 +25,7 @@ executable StandOffApp
                      , StandOffApp.ConfigClassDefs
                      , StandOffApp.Model
                      , StandOffApp.App
+                     , StandOffApp.PostgRest
                      , StandOffApp.Bibliography.Widget
                      , StandOffApp.Bibliography.TypeDefs
                      , StandOffApp.Bibliography.Xhr
@@ -45,5 +46,6 @@ executable StandOffApp
                      , text
                      , lens
                      , data-default-class
+                     , lens-aeson
   hs-source-dirs:      src
   default-language:    Haskell2010

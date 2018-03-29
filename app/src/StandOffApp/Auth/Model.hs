@@ -29,7 +29,8 @@ data AuthData t = AuthData
 class AuthConfig m where
   loginUri :: m -> Text -- ^ uri (base uri + path) of login rpc
   loginMethod :: m -> Text -- ^ http method for login rpc
-  parseAuthToken :: (m -> (Either XhrException XhrResponse -> Maybe AuthToken)) -- ^ Function for parsing the token from a xhr response.
+  parseAuthToken :: m -> (Either XhrException XhrResponse -> Maybe AuthToken) -- ^ Function for parsing the token from a xhr response.
+  parseLoginError :: m -> (Either XhrException XhrResponse -> Maybe Text) -- ^ Function for parsing the xhr response to an error message.
   loginRequest :: m -> (Text -> Text -> XhrRequestConfig Text)
   authHeadlineDepth :: m -> Int -- ^ Whether "h2", "h3" in widgets.
 

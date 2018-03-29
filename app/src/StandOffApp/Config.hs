@@ -9,10 +9,13 @@ import Control.Lens
 import Data.Monoid ((<>))
 
 import StandOffApp.ConfigClassDefs
+import StandOffApp.Xhr
+import qualified StandOffApp.PostgRest as PG
 
 import qualified StandOffApp.Auth.Model as Auth
-import qualified StandOffApp.Auth.PostgRest as PG
+import qualified StandOffApp.Auth.PostgRest as AuthPG
 
+import StandOffApp.Auth.Widget
 
 data AppConfig
   = AppConfig
@@ -22,6 +25,7 @@ data AppConfig
   , _cfg_headlineDepth :: Int -- ^ Depth of a headline for a major view.
   , _cfg_loginRequest :: Text -> Text -> XhrRequestConfig Text -- ^ make a request from user and pwd
   , _cfg_parseToken :: Either XhrException XhrResponse -> Maybe Auth.AuthToken -- ^ parse the authentication token from xhr response
+  , _cfg_parseLoginError :: Either XhrException XhrResponse -> Maybe Text
   }
 
 makeLenses ''AppConfig
@@ -36,6 +40,7 @@ defaultConfig =
   , _cfg_loginPath = "/rpc/login"
   , _cfg_loginMethod = "POST"
   , _cfg_headlineDepth = 3
-  , _cfg_loginRequest = PG.makeLoginRequest
-  , _cfg_parseToken = PG.parseJwt
+  , _cfg_loginRequest = AuthPG.makeLoginRequest
+  , _cfg_parseToken = AuthPG.parseJwt
+  , _cfg_parseLoginError = PG.parseError
   }
