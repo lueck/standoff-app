@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module StandOffApp.Auth.Widget
-  ( loginWidget
+  ( login
   , showToken
   ) where
 
@@ -19,11 +19,11 @@ import Control.Lens
 
 import StandOffApp.Auth.Model
 
-loginWidget :: (MonadWidget t m,
-                MonadReader l m, AuthConfig l,
-                EventWriter t w m, OuterBubble w t, Default w)
-               => m ()
-loginWidget = elClass "div" "form login" $ do
+login :: (MonadWidget t m,
+          MonadReader l m, AuthConfig l,
+          EventWriter t w m, OuterBubble w t, Default w)
+         => m ()
+login = elClass "div" "form login" $ do
   -- draw login form
   depth :: Int <- asks authHeadlineDepth
   el ("h" <> (T.pack $ show depth)) $ text "Login"

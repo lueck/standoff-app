@@ -32,7 +32,7 @@ appWidget conf view = do
 
 appView :: (MonadWidget t m) => AppWidget t m ()
 appView = do
-  loginWidget
+  login
   
   showToken
   
