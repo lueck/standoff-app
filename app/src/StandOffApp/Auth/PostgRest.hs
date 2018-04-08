@@ -39,13 +39,15 @@ parseJwt rsp =
   rsp
 
 
--- | Return an 'XhrRequestConfig' for an authenticated request, i.e. a
--- request config with the token as authorization header.
-cfgAuthRq :: (MonadWidget t m, MonadReader l m, AuthModel l t) => m (Dynamic t (XhrRequestConfig ()))
-cfgAuthRq = do
-  tok :: Dynamic t (Maybe AuthToken) <- asks authToken
-  return $ fmap
-    (\tk -> def
-            & xhrRequestConfig_headers .~ Map.fromList[("Authorization",
-                                                        "Bearer " <> (fromMaybe "" tk))])
-    tok
+-- | Return an 'XhrRequestConfig' for an token.
+cfgAuthRq :: Maybe AuthToken -> XhrRequestConfig ()
+cfgAuthRq tok = def
+  & xhrRequestConfig_headers .~ Map.fromList[("Authorization",
+                                              "Bearer " <> (fromMaybe "" tok))]
+
+cfgAuthRqWidget :: (MonadWidget t m,
+                    MonadReader l m, AuthModel l t, AuthConfig l)
+                   => m (Dynamic t (XhrRequestConfig ()))
+cfgAuthRqWidget = do
+  tok <- asks authToken
+  return $ fmap cfgAuthRq tok
