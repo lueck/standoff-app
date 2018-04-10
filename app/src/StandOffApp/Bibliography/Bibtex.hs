@@ -9,21 +9,14 @@ import Control.Monad.Fix
 import Control.Lens
 import Control.Monad.Trans.Reader
 
-import StandOffApp.Config
-import StandOffApp.Bibliography.TypeDefs
+import StandOffApp.Bibliography.Model
 
 -- | Format a bibliographic entry to bibtex. This is a widget and
 -- creates a dynamic dom.
 
--- bibtexEntry :: ( DomBuilder t m
---                , DomBuilderSpace m ~ GhcjsDomSpace
---                , MonadFix m
---                , MonadHold t m
---                , PostBuild t m
---                )
---                => Dynamic t Entry
---             -> m ()
-bibtexEntry :: MonadWidget t m => Dynamic t Entry -> ReaderT AppConfig m ()
+bibtexEntry :: (MonadWidget t m,
+                MonadReader l m, BiblioModel l t, BiblioConfig l,
+               ) => Dynamic t Entry -> m ()
 bibtexEntry e = el "div" $ do
   text "@"
   dynText $ fmap (^.entryType) e

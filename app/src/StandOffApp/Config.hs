@@ -40,7 +40,7 @@ data AppConfig
                              -> XhrRequestConfig () -- ^ config for authenticated request
                              -> XhrRequest ()
   , _cfg_biblioParseError :: Either XhrException XhrResponse -> Maybe Text
-  , _cfg_biblioParseFields :: Either XhrException XhrResponse -> Bib.Fields
+  , _cfg_biblioParseFields :: Either XhrException XhrResponse -> Bib.FieldTypesMap
   }
 
 makeLenses ''AppConfig

@@ -11,13 +11,14 @@ import Control.Monad.Fix
 import Control.Lens
 import Control.Monad.Trans.Reader
 
-import StandOffApp.Config
-import StandOffApp.Bibliography.TypeDefs
+import StandOffApp.Bibliography.Model
 
 -- TODO: Get formatting right
 
 -- | Formatted output of a bibliographic 'Entry'.
-format :: MonadWidget t m => Dynamic t Entry -> ReaderT AppConfig m ()
+format :: (MonadWidget t m,
+           MonadReader l m, BiblioModel l t, BiblioConfig l,
+          ) => Dynamic t Entry -> m ()
 format entry = void $ dyn (formattedType . (^.entryType) <$> entry)
   where
     --formattedType :: MonadWidget t m => T.Text -> m ()

@@ -27,7 +27,6 @@ executable StandOffApp
                      , StandOffApp.PostgRest
                      , StandOffApp.Bibliography.Model
                      , StandOffApp.Bibliography.Form
-                     , StandOffApp.Bibliography.TypeDefs
                      , StandOffApp.Bibliography.Xhr
                      , StandOffApp.Bibliography.PostgRest
                      , StandOffApp.Bibliography.Bibtex

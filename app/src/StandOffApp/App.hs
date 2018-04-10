@@ -11,7 +11,6 @@ import StandOffApp.ConfigInst
 
 import StandOffApp.Bibliography.Form
 import StandOffApp.Bibliography.Model
-import StandOffApp.Bibliography.TypeDefs (emptyEntry)
 --import StandOffApp.Bibliography.Bibtex
 --import StandOffApp.Bibliography.Format
 import StandOffApp.Auth.Widget

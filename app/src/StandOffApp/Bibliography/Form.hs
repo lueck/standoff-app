@@ -18,7 +18,6 @@ import Data.Default.Class
 import StandOffApp.Bibliography.Model
 import StandOffApp.Bibliography.Xhr
 import StandOffApp.Bibliography.DynamicList
-import qualified StandOffApp.Bibliography.TypeDefs as E
 
 
 -- | A form for creating or modifying a bibliographic entry. This is
@@ -27,8 +26,8 @@ biblioForm
   :: (MonadWidget t m,
       MonadReader l m, BiblioModel l t, BiblioConfig l,
       EventWriter t w m, OuterBubble w t, Default w
-     ) => E.Entry                           -- ^ initial entry
-  -> m (Dynamic t E.Entry) -- ^ returns the modified/new entry
+     ) => Entry                           -- ^ initial entry
+  -> m (Dynamic t Entry) -- ^ returns the modified/new entry
 biblioForm initEntry = elClass "div" "form bibliographicEntry" $ do
   -- Draw form fields for key and entry type 
   key <- labelWidget "Entry Key" "bibInputWizard.entryKey" $
@@ -37,19 +36,17 @@ biblioForm initEntry = elClass "div" "form bibliographicEntry" $ do
          dropdown "book" (constDyn entryTypes) def
 
   -- get the field types for this entry type
-  allFlds :: Dynamic t Fields <- asks biblioFields
+  allFlds :: Dynamic t FieldTypes <- asks biblioFieldTypes
   let typeFlds = zipDynWith
-                 (\t fs -> fromMaybe Map.empty $ Map.lookup t fs)
+                 (\t fs -> fromMaybe [] $ Map.lookup t fs)
                  (value typEv)
                  allFlds
-      weightOrder = fmap ((sortOn snd) . (Map.foldrWithKey (\k w acc -> (k,w):acc) [])) typeFlds
-      typeFldsList = fmap (map (\(k,w) -> (k, k))) weightOrder
+      -- add labels. TODO: add real labels
+      typeFldsList = fmap (map (\k -> (k, k))) typeFlds
       typeFldsMap = fmap Map.fromList  typeFldsList
-      --fieldKey :: Int -> Dynamic t T.Text
-      fieldKey n = fmap (fromMaybe "unkown" . (fmap fst) . (^? element n)) typeFldsList
-      --addRow :: (Reflex t) => Dynamic t Int -> Event t (T.Text, T.Text)
-      --addRow cnt = fmap (\n -> (fieldKey n, "")) $ updated cnt
-      addRow cnt = updated $ zipDynWith (\fs n ->
+
+  --addRow :: (Reflex t) => Dynamic t Int -> Event t (T.Text, T.Text)
+  let addRow cnt = updated $ zipDynWith (\fs n ->
                                             (\f -> (f, "")) $
                                             (fromMaybe "unknown") $
                                             (fmap fst) $
@@ -73,13 +70,13 @@ biblioForm initEntry = elClass "div" "form bibliographicEntry" $ do
 
   -- make a map from the list returned by the fields widget and make the entry
   let fieldsMap = fmap (Map.fromListWith (\ a b -> a <> " and " <> b)) fields
-  let entry = -- :: Dynamic t E.Entry =
-        liftM3 E.Entry (value key) (value typEv) fieldsMap
+  let entry = -- :: Dynamic t Entry =
+        liftM3 Entry (value key) (value typEv) fieldsMap
   return entry
   where
-    initKey = E._entry_key initEntry
-    initType = E._entry_type initEntry
-    initFields = Map.toList $ E._entry_fields initEntry
+    initKey = _entry_key initEntry
+    initType = _entry_type initEntry
+    initFields = Map.toList $ _entry_fields initEntry
     extractRemoveEv :: (Dynamic t T.Text, Dynamic t T.Text, Event t ())
                     -> Event t ()
     extractRemoveEv = (\(_, _, e) -> e)

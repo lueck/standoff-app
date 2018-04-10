@@ -7,12 +7,13 @@ module StandOffApp.Bibliography.Model where
 
 import Reflex
 import Reflex.Dom
-import Data.Text
+import Data.Text hiding (map)
 import Data.Default.Class
 import Control.Lens
 import Data.Semigroup
 import Control.Monad.Reader
-import qualified Data.Map as Map 
+import qualified Data.Map as Map
+import Data.List
 
 import Data.Maybe --- bbb
 import StandOffApp.Xhr -- bbb
@@ -20,22 +21,41 @@ import StandOffApp.Xhr -- bbb
 
 -- * Model
 
+-- | A bibliographic record. Like in bibtex this has a key and type
+-- and a set of key value pairs.
+data Entry
+  = Entry
+  { _entry_key :: Text                 -- ^ the entry's (bibtex) key
+  , _entry_type :: Text                -- ^ e.g. book, article
+  , _entry_fields :: Map.Map Text Text -- ^ the fields. This is a list
+                    -- of key value pairs.
+  }
+
+makeLenses ''Entry
+
+emptyEntry :: Entry
+emptyEntry = Entry "" "" Map.empty
+
 -- | Map of entry types and weights for the widget
 type EntryTypes = Map.Map Text Int
+
+-- | A mapping of lists field types (values) per entry type (keys).
+type FieldTypes = Map.Map Text [Text]
 
 -- | Map of entry types, which's values are maps of field name and
 -- field weight.
 --
 -- [("book", [("author", 1), ("title", 10), ...]), ("article", [...]),
 -- ...]
-type Fields = Map.Map Text (Map.Map Text Int)
+type FieldTypesMap = Map.Map Text (Map.Map Text Int)
 
 -- | Map of field names and field labels
 type FieldLabels = Map.Map Text Text
 
 -- | A record of values that are accessible throughout the whole app.
 data BiblioData t = BiblioData
-  { _biblio_fields :: Dynamic t Fields
+  { _biblio_fieldTypes :: Dynamic t FieldTypes
+  , _biblio_fieldTypesMap :: Dynamic t FieldTypesMap
   --, user :: Dynamic t (Maybe Text)
   }
 
@@ -45,7 +65,7 @@ data BiblioData t = BiblioData
 -- go to 'BiblioModel'.
 class BiblioConfig m where
   baseUri :: m -> Text -- ^ uri (base uri + path) of login rpc
-  parseFields :: m -> (Either XhrException XhrResponse -> Fields) -- ^ Function for parsing the fields from a xhr response.
+  parseFields :: m -> (Either XhrException XhrResponse -> FieldTypesMap) -- ^ Function for parsing the fields from a xhr response.
   parseError :: m -> (Either XhrException XhrResponse -> Maybe Text) -- ^ Function for parsing the xhr response to an error message.
   fieldsRequest :: m -> (Text -> XhrRequestConfig () -> XhrRequest ())
   biblioHeadlineDepth :: m -> Int -- ^ Whether "h2", "h3" in widgets.
@@ -53,15 +73,19 @@ class BiblioConfig m where
 -- | Like 'BiblioConfig' but parametrized with reflex time line.
 class BiblioModel m t where
   authRequestConfig :: m -> Dynamic t (XhrRequestConfig ()) -- ^ config of an authenticated request
-  biblioFields :: m -> Dynamic t Fields -- ^ getter for the fields
+  biblioFieldTypes :: m -> Dynamic t FieldTypes -- ^ the types of bibliographic fields
 
 -- | Return 'BiblioData' from a 'BiblioEventBubble'.
 biblioModel :: MonadWidget t m => Event t (BiblioEventBubble t) -> m (BiblioData t)
 biblioModel bubble = do
-  let evFields = coincidence (_biblioEvBub_evFields <$> bubble)
-  flds <- holdDyn Map.empty evFields
+  let evFieldTypes = coincidence (_biblioEvBub_evFieldTypes <$> bubble)
+  fldTypesMap <- holdDyn Map.empty evFieldTypes
+  let fldTypesWeightOrder = fmap (Map.map ((sortOn snd) . (Map.foldrWithKey (\k w acc -> (k,w):acc) []))) fldTypesMap
+      fldTypesList = fmap (Map.map (map fst)) fldTypesWeightOrder
+
   return $ BiblioData
-    { _biblio_fields = flds
+    { _biblio_fieldTypesMap = fldTypesMap
+    , _biblio_fieldTypes = fldTypesList
     }
 
 -- * EventBubble
@@ -69,7 +93,7 @@ biblioModel bubble = do
 -- | A record for all the events (values) that have to go up in the
 -- dom to be made accessible throughout the app.
 data BiblioEventBubble t = BiblioEventBubble
-  { _biblioEvBub_evFields :: Event t Fields -- ^ fired when xhr returned a fields
+  { _biblioEvBub_evFieldTypes :: Event t FieldTypesMap -- ^ fired when xhr returned fields
   }
 
 makeLenses ''BiblioEventBubble
@@ -79,13 +103,14 @@ makeLenses ''BiblioEventBubble
 -- modules.
 instance (Reflex t) => Default (BiblioEventBubble t) where
   def = BiblioEventBubble
-        { _biblioEvBub_evFields = never
+        { _biblioEvBub_evFieldTypes = never
         }
 
 -- | Combination of events in the event writer.
 instance (Reflex t) => Semigroup (BiblioEventBubble t) where
   (<>) a b = BiblioEventBubble
-             { _biblioEvBub_evFields = a^.biblioEvBub_evFields <> b^.biblioEvBub_evFields
+             { _biblioEvBub_evFieldTypes =
+                 a^.biblioEvBub_evFieldTypes <> b^.biblioEvBub_evFieldTypes
              }
 
 -- | The event bubble containing the 'BiblioEventBubble'. It must have a

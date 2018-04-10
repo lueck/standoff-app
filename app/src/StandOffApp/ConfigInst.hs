@@ -56,7 +56,7 @@ instance (Reflex t) => BiblioConfig (Model t) where
 
 instance (Reflex t) => BiblioModel (Model t) t where
   authRequestConfig = fmap AuthPG.cfgAuthRq . _auth_token . _model_auth
-  biblioFields = _biblio_fields . _model_biblio
+  biblioFieldTypes = _biblio_fieldTypes . _model_biblio
 
 instance (Reflex t) => Biblio.OuterBubble (EventBubble t) t where
   getBiblioBubble = evBub_biblioBubble

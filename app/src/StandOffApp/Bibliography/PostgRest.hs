@@ -55,7 +55,7 @@ makeFieldsRequest baseUri authRq =
 
 -- | Parse the response from the backend into a mapping of
 -- bibliographic field types.
-parseFieldsResponse :: Either XhrException XhrResponse -> Fields
+parseFieldsResponse :: Either XhrException XhrResponse -> FieldTypesMap
 --parseFieldsResponse rsp = Map.empty -- FIXME
 parseFieldsResponse rsp =
   either
