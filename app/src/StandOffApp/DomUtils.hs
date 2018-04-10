@@ -9,11 +9,11 @@ import qualified Data.Map as Map
 import           Data.Monoid((<>))
 
 
--- labelWidget :: forall k t m a. (DomBuilder t m, MonadFix m, MonadHold t m, PostBuild t m)
---                => T.Text
---             -> T.Text
---             -> k -> m a
-labelWidget label xid widget = do
-  el "div" $ do
-    el "div" $ text label
+labelWidget :: MonadWidget t m => T.Text -- ^ Label for user interface
+            -> T.Text -- ^ css class of div container
+            -> m a -- ^ widget
+            -> m a
+labelWidget label clas widget = do
+  elClass "div" clas $ do
+    elClass "div" "label" $ text label
     widget

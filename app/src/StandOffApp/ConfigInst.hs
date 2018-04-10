@@ -12,6 +12,11 @@ import StandOffApp.Model
 import StandOffApp.ConfigClassDefs
 
 import StandOffApp.Auth.Model
+import qualified StandOffApp.Auth.PostgRest as AuthPG
+
+import StandOffApp.Bibliography.Model hiding (OuterBubble)
+import qualified StandOffApp.Bibliography.Model as Biblio (OuterBubble)
+
 
 -- | In order to decouple the app's submodules 'AppConfig' is an instance
 -- of the submodules' configurations.
@@ -39,3 +44,20 @@ instance (Reflex t) => AuthModel (Model t) t where
 
 instance (Reflex t) => OuterBubble (EventBubble t) t where
   getAuthBubble = evBub_authBubble
+
+
+-- * Bibliography
+instance (Reflex t) => BiblioConfig (Model t) where
+  baseUri = _cfg_baseUri . _model_config
+  parseFields = _cfg_biblioParseFields . _model_config
+  parseError = _cfg_biblioParseError . _model_config
+  fieldsRequest = _cfg_biblioFieldsRequest . _model_config
+  biblioHeadlineDepth = _cfg_headlineDepth . _model_config
+
+instance (Reflex t) => BiblioModel (Model t) t where
+  authRequestConfig = fmap AuthPG.cfgAuthRq . _auth_token . _model_auth
+  biblioFields = _biblio_fields . _model_biblio
+
+instance (Reflex t) => Biblio.OuterBubble (EventBubble t) t where
+  getBiblioBubble = evBub_biblioBubble
+  extractBiblioDataEvent = evBub_authBubble . authEvBub_evToken -- FIXME: move to config

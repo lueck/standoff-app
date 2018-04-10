@@ -12,6 +12,7 @@ import Control.Monad.Trans.Reader
 import StandOffApp.Config
 
 import StandOffApp.Auth.Model
+import StandOffApp.Bibliography.Model
 
 -- * Model
 
@@ -22,6 +23,7 @@ data Model t
   = Model
   { _model_config :: AppConfig -- ^ configuration
   , _model_auth :: AuthData t -- ^ dynamic data related to authentication
+  , _model_biblio :: BiblioData t -- ^ dynamic data related to the bibliography
   }
 
 makeLenses ''Model
@@ -31,9 +33,12 @@ appModel :: MonadWidget t m => Event t (EventBubble t) -> AppConfig -> m (Model 
 appModel bub conf = do
   let evAuth = fmap _evBub_authBubble bub
   auth <- authModel evAuth
+  let evBiblio = fmap _evBub_biblioBubble bub
+  biblio <- biblioModel evBiblio
   return $ Model
     { _model_config = conf
     , _model_auth = auth
+    , _model_biblio = biblio
     }
 
 -- * Event propagation
@@ -44,6 +49,7 @@ appModel bub conf = do
 data EventBubble t
   = EventBubble
   { _evBub_authBubble :: AuthEventBubble t
+  , _evBub_biblioBubble :: BiblioEventBubble t
   }
 
 makeLenses ''EventBubble
@@ -51,6 +57,7 @@ makeLenses ''EventBubble
 instance (Reflex t) => Default (EventBubble t) where
   def = EventBubble
         { _evBub_authBubble = def
+        , _evBub_biblioBubble = def
         }
 
 -- | The events are combined monoidally (semigroup'isch). That's
@@ -59,6 +66,7 @@ instance (Reflex t) => Default (EventBubble t) where
 instance (Reflex t) => Semigroup (EventBubble t) where
   (<>) a b = EventBubble
              { _evBub_authBubble = _evBub_authBubble a <> _evBub_authBubble b
+             , _evBub_biblioBubble = _evBub_biblioBubble a <> _evBub_biblioBubble b
              }
 
 -- * Widget Types

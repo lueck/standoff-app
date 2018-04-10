@@ -7,6 +7,15 @@ import Data.Text
 import Data.Monoid ((<>))
 
 
+-- * Request configuration
+
+-- | make a request passing the first argument and dropping a second.
+requestCfgIgn1 :: XhrRequestConfig () -- ^ the request with credentials
+                 -> a -- ^ a value that is ignored
+                 -> XhrRequestConfig ()
+requestCfgIgn1 rq _ = rq
+
+
 -- * Parsing the response
 
 -- | Show the whole response body.

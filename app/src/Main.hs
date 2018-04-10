@@ -12,4 +12,4 @@ config :: AppConfig
 config = defaultConfig & cfg_baseUri .~ "http://127.0.0.1:3000"
 
 main :: IO ()
-main = mainWidget (appWidget config appView)
+main = mainWidget (appWidget config appView appEventsHook)
