@@ -4,10 +4,10 @@ module StandOffApp.Bibliography.Bibtex
 
 import Reflex.Dom hiding (element)
 import qualified Data.Text as T
+import qualified Data.Map as Map
 import Control.Monad
-import Control.Monad.Fix
+import Control.Monad.Reader
 import Control.Lens
-import Control.Monad.Trans.Reader
 
 import StandOffApp.Bibliography.Model
 
@@ -15,16 +15,16 @@ import StandOffApp.Bibliography.Model
 -- creates a dynamic dom.
 
 bibtexEntry :: (MonadWidget t m,
-                MonadReader l m, BiblioModel l t, BiblioConfig l,
+                MonadReader l m, BiblioModel l t, BiblioConfig l
                ) => Dynamic t Entry -> m ()
 bibtexEntry e = el "div" $ do
   text "@"
-  dynText $ fmap (^.entryType) e
+  dynText $ fmap _entry_type e
   text "{"
-  dynText $ fmap (^.entryKey) e
+  dynText $ fmap _entry_key e
   text ",\n"
   el "table" $ do
-    simpleList (fmap (^.entryFields) e) fFld
+    simpleList (fmap (Map.toList . _entry_fields) e) fFld
   text "}"
   where
     fFld :: MonadWidget t m => Dynamic t (T.Text, T.Text) -> m ()
@@ -40,9 +40,12 @@ bibtexEntry e = el "div" $ do
 
 -- | A pure Funktion that formats a bibliographic entry to bibtex.
 bibtexEntryTxt :: Entry -> T.Text
-bibtexEntryTxt (Entry key typ flds) = T.concat
+bibtexEntryTxt e = T.concat
   ["@", typ,
   "{", key, ",\n",
-  (T.concat $ map (\(k, v) -> T.concat ["\t", k, "\t= {", v, "},\n"]) flds),
+  (T.concat $ map (\(k, v) -> T.concat ["\t", k, "\t= {", v, "},\n"]) $ Map.toList flds),
   "}"]
-  
+  where
+    key = _entry_key e
+    typ = _entry_type e
+    flds = _entry_fields e

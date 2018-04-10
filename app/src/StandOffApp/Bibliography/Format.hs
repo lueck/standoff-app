@@ -7,7 +7,7 @@ import qualified Data.Text as T
 import           Data.Maybe --(fromJust)
 import qualified Data.Map as Map
 import Control.Monad
-import Control.Monad.Fix
+import Control.Monad.Reader
 import Control.Lens
 import Control.Monad.Trans.Reader
 
@@ -17,9 +17,9 @@ import StandOffApp.Bibliography.Model
 
 -- | Formatted output of a bibliographic 'Entry'.
 format :: (MonadWidget t m,
-           MonadReader l m, BiblioModel l t, BiblioConfig l,
-          ) => Dynamic t Entry -> m ()
-format entry = void $ dyn (formattedType . (^.entryType) <$> entry)
+           MonadReader l m, BiblioModel l t, BiblioConfig l
+           ) => Dynamic t Entry -> m ()
+format entry = void $ dyn (formattedType . (^.entry_type) <$> entry)
   where
     --formattedType :: MonadWidget t m => T.Text -> m ()
     formattedType t = do
@@ -35,7 +35,7 @@ format entry = void $ dyn (formattedType . (^.entryType) <$> entry)
           ; locPublYear
           }
     --flds :: (Reflex t) => Dynamic t (Map.Map T.Text T.Text)
-    flds = fmap (Map.fromList . (^.entryFields)) entry
+    flds = fmap _entry_fields entry
     --fdom :: MonadWidget t m => T.Text -> T.Text -> T.Text -> T.Text -> m ()
     fdom k dflt beforeSep afterSep = do
       el "span" $ dynText $
