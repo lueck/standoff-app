@@ -32,6 +32,11 @@ data AppConfig
   , _cfg_parseToken :: Either XhrException XhrResponse -> Maybe Auth.AuthToken -- ^ parse the authentication token from xhr response
   , _cfg_parseLoginError :: Either XhrException XhrResponse -> Maybe Text
   -- * Bibliography
+  , _cfg_biblioParseError :: Either XhrException XhrResponse -> Maybe Text
+  , _cfg_biblioEntriesRequest :: Text -- ^ base uri
+                              -> XhrRequestConfig () -- ^ config for authenticated request
+                              -> XhrRequest ()
+  , _cfg_biblioParseEntries :: Either XhrException XhrResponse -> Bib.EntryTypesMap
   , _cfg_biblioTypeFieldsRequest :: Text -- ^ base uri
                                  -> XhrRequestConfig () -- ^ config for authenticated request
                                  -> Text -- ^ entry type
@@ -39,7 +44,6 @@ data AppConfig
   , _cfg_biblioFieldsRequest :: Text -- ^ base uri
                              -> XhrRequestConfig () -- ^ config for authenticated request
                              -> XhrRequest ()
-  , _cfg_biblioParseError :: Either XhrException XhrResponse -> Maybe Text
   , _cfg_biblioParseFields :: Either XhrException XhrResponse -> Bib.FieldTypesMap
   }
 
@@ -62,9 +66,11 @@ defaultConfig =
   , _cfg_parseToken = AuthPG.parseJwt
   , _cfg_parseLoginError = PG.parseError
   -- Bibliography
-  , _cfg_biblioTypeFieldsRequest = BibPG.makeTypeFieldsRequest -- bbb
-  , _cfg_biblioFieldsRequest = BibPG.makeFieldsRequest
   --, _cfg_biblioFieldsEventExtractor = FIXME
   , _cfg_biblioParseError = PG.parseError
+  , _cfg_biblioEntriesRequest = BibPG.makeEntriesRequest
+  , _cfg_biblioParseEntries = BibPG.parseEntriesResponse
+  , _cfg_biblioTypeFieldsRequest = BibPG.makeTypeFieldsRequest -- bbb
+  , _cfg_biblioFieldsRequest = BibPG.makeFieldsRequest
   , _cfg_biblioParseFields = BibPG.parseFieldsResponse
   }

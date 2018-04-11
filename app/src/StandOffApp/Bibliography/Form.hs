@@ -28,22 +28,35 @@ biblioForm
       EventWriter t w m, OuterBubble w t, Default w
      ) => Entry                           -- ^ initial entry
   -> m (Dynamic t Entry) -- ^ returns the modified/new entry
-biblioForm initEntry = elClass "div" "form bibliographicEntry" $ do
-  -- Draw form fields for key and entry type 
+biblioForm initEntry = do
+  -- Draw form field for the entry's key
   key <- labelWidget "Entry Key" "bibInputWizard.entryKey" $
          textInput $ def & attributes .~ constDyn ("placeholder" =: "Key")
-  typEv <- labelWidget "Entry Type" "bibInputWizard.entryType" $
-         dropdown "book" (constDyn entryTypes) def
+
+  -- get the entry types
+  allEnts :: Dynamic t EntryTypes <- asks biblioEntryTypes
+  let entLabelList = fmap (map (\k -> (k, k))) allEnts
+      entLabelMap = fmap Map.fromList entLabelList
+  -- draw the dropdown for choosing the entry type
+  -- ALTERNATIVES: hard wired or configurable default
+  -- typEv <- labelWidget "Entry Type" "bibInputWizard.entryType" $
+  --          dropdown "article" entLabelMap def
+  typEvEv <- dyn ((\es -> labelWidget "Entry Type" "bibInputWizard.entryType" $
+                  dropdown (fromMaybe "online" $ fmap fst $ es ^? element 0) entLabelMap def)
+                <$> entLabelList)
+  let typEvDyn = fmap value typEvEv
+  typDynDyn <- holdDyn "thesis" typEvDyn
+  let typDyn = join typDynDyn
 
   -- get the field types for this entry type
   allFlds :: Dynamic t FieldTypes <- asks biblioFieldTypes
   let typeFlds = zipDynWith
                  (\t fs -> fromMaybe [] $ Map.lookup t fs)
-                 (value typEv)
+                 typDyn -- (value typEv) -- ALTERNATIVES
                  allFlds
-      -- add labels. TODO: add real labels
+      -- add labels. FIXME: add real labels
       typeFldsList = fmap (map (\k -> (k, k))) typeFlds
-      typeFldsMap = fmap Map.fromList  typeFldsList
+      typeFldsMap = fmap Map.fromList typeFldsList
 
   --addRow :: (Reflex t) => Dynamic t Int -> Event t (T.Text, T.Text)
   let addRow cnt = updated $ zipDynWith (\fs n ->
@@ -60,7 +73,9 @@ biblioForm initEntry = elClass "div" "form bibliographicEntry" $ do
       fldCnt :: Dynamic t Int <-
         foldDyn (+) (-1 :: Int) (1 <$ evIncrFldCnt)
       evRows :: Event t (Dynamic t [(Dynamic t T.Text, Dynamic t T.Text, Event t ())]) <-
-        -- dyn wraps it into an event
+        -- dyn wraps it into an event -- FIXME: preserve present
+        -- fields if type is changed! They are dropped. This is a
+        -- consequence of using dyn. It was better before.
         dyn ((\fs -> dynamicList (fieldWidget fs typeFldsMap) extractRemoveEv (const never) (addRow fldCnt) initFields) <$> typeFldsList)
       evIncrFldCnt :: Event t () <-
         button "+"
@@ -71,7 +86,8 @@ biblioForm initEntry = elClass "div" "form bibliographicEntry" $ do
   -- make a map from the list returned by the fields widget and make the entry
   let fieldsMap = fmap (Map.fromListWith (\ a b -> a <> " and " <> b)) fields
   let entry = -- :: Dynamic t Entry =
-        liftM3 Entry (value key) (value typEv) fieldsMap
+        --liftM3 Entry (value key) (value typEv) fieldsMap
+        liftM3 Entry (value key) typDyn fieldsMap -- ALTERNATIVES
   return entry
   where
     initKey = _entry_key initEntry

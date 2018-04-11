@@ -11,8 +11,8 @@ import StandOffApp.ConfigInst
 
 import StandOffApp.Bibliography.Form
 import StandOffApp.Bibliography.Model
---import StandOffApp.Bibliography.Bibtex
---import StandOffApp.Bibliography.Format
+import StandOffApp.Bibliography.Bibtex
+import StandOffApp.Bibliography.Format
 import StandOffApp.Auth.Widget
 
 
@@ -41,8 +41,8 @@ appView = do
   
   entry <- biblioForm emptyEntry
   -- -- live output
-  -- format entry
-  -- bibtexEntry entry
+  format entry
+  bibtexEntry entry
 
   return ()
 

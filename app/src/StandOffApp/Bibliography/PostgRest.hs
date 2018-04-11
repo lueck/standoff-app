@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
 module StandOffApp.Bibliography.PostgRest where
 
 import Reflex.Dom
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Map as Map
-import GHC.Generics
 import qualified Data.Aeson as J
+import Data.Aeson ((.:))
 import Data.Maybe
 import Control.Monad
 
@@ -18,15 +17,16 @@ import StandOffApp.Bibliography.Model
 
 data PGFieldType =
   PGFieldType
-  { entry_type :: T.Text
-  , field_type :: T.Text
-  , weight :: Int
-  } deriving (Generic, Show)
+  { _pgfield_entryType :: T.Text
+  , _pgfield_fieldType :: T.Text
+  , _pgfield_weight :: Int
+  } deriving Show
 
-instance J.ToJSON PGFieldType where
-  toEncoding = J.genericToEncoding J.defaultOptions
-
-instance J.FromJSON PGFieldType
+instance J.FromJSON PGFieldType where
+  parseJSON = J.withObject "entry_type_field_type" $ \v -> PGFieldType
+    <$> v .: "entry_type"
+    <*> v .: "field_type"
+    <*> v .: "weight"
 
 -- | Create a 'XhrRequest' for getting the bibliographic fields for a
 -- specific entry type.
@@ -56,7 +56,6 @@ makeFieldsRequest baseUri authRq =
 -- | Parse the response from the backend into a mapping of
 -- bibliographic field types.
 parseFieldsResponse :: Either XhrException XhrResponse -> FieldTypesMap
---parseFieldsResponse rsp = Map.empty -- FIXME
 parseFieldsResponse rsp =
   either
   (const Map.empty)
@@ -67,4 +66,42 @@ parseFieldsResponse rsp =
   where
     makeFieldsMap = foldr insertField Map.empty
     insertField (PGFieldType e f w) acc = Map.insertWith (<>) e (Map.singleton f w) acc
-      
+
+
+-- * Entry types
+
+data PGEntryType =
+  PGEntryType
+  { _pgentry_type :: T.Text
+  , _pgentry_weight :: Int
+  } deriving Show
+
+instance J.FromJSON PGEntryType where
+  parseJSON = J.withObject "entry_type" $ \v -> PGEntryType
+    <$> v .: "entry_type"
+    <*> v .: "weight"
+
+-- | Create a 'XhrRequest' for getting the bibliographic entries.
+makeEntriesRequest :: T.Text -- ^ base uri
+                  -> XhrRequestConfig () -- ^ authenticated request config
+                  -> XhrRequest ()
+makeEntriesRequest baseUri authRq =
+  XhrRequest "GET" uri rqCfg
+  where
+    uri = baseUri <> "/entry_type"
+    rqCfg = authRq
+
+-- | Parse the response from the backend into a mapping of
+-- bibliographic entry types.
+parseEntriesResponse :: Either XhrException XhrResponse -> EntryTypesMap
+parseEntriesResponse rsp =
+  either
+  (const Map.empty)
+  (\r -> fromMaybe Map.empty $
+     fmap makeEntriesMap
+     ((decodeXhrResponse r) :: Maybe [PGEntryType]))
+  rsp
+  where
+    makeEntriesMap = foldr insertEntry Map.empty
+    insertEntry (PGEntryType e w) acc = Map.insertWith (const) e w acc
+    --insertEntry (PGEntryType e) acc = Map.insertWith const e 1 acc

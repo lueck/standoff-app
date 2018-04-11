@@ -49,13 +49,16 @@ instance (Reflex t) => OuterBubble (EventBubble t) t where
 -- * Bibliography
 instance (Reflex t) => BiblioConfig (Model t) where
   baseUri = _cfg_baseUri . _model_config
-  parseFields = _cfg_biblioParseFields . _model_config
-  parseError = _cfg_biblioParseError . _model_config
-  fieldsRequest = _cfg_biblioFieldsRequest . _model_config
   biblioHeadlineDepth = _cfg_headlineDepth . _model_config
+  parseError = _cfg_biblioParseError . _model_config
+  parseEntries = _cfg_biblioParseEntries . _model_config
+  entriesRequest = _cfg_biblioEntriesRequest . _model_config
+  parseFields = _cfg_biblioParseFields . _model_config
+  fieldsRequest = _cfg_biblioFieldsRequest . _model_config
 
 instance (Reflex t) => BiblioModel (Model t) t where
   authRequestConfig = fmap AuthPG.cfgAuthRq . _auth_token . _model_auth
+  biblioEntryTypes = _biblio_entryTypes . _model_biblio
   biblioFieldTypes = _biblio_fieldTypes . _model_biblio
 
 instance (Reflex t) => Biblio.OuterBubble (EventBubble t) t where
